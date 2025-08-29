@@ -1,0 +1,57 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Plan {
+  id          String   @id @default(cuid())
+  name        String   // "Basic", "Pro", "Enterprise" 
+  description String   // What this plan includes
+  price       Int      // Price in cents (e.g., 999 = $9.99)
+  interval    String   // "month" or "year"
+  features    String   // JSON string of features for now
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id             String           @id @default(cuid())
+  userId         String           // In production, this would link to a User table
+  planId         String
+  status         SubscriptionStatus
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  canceledAt     DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  // Relations
+  plan           Plan             @relation(fields: [planId], references: [id])
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELED
+  UNPAID
+}
+
+model Event {
+  id        String   @id @default(cuid())
+  type      String   // "pricing_viewed", "checkout_started", etc.
+  userId    String?  // Optional user ID
+  metadata  String?  // JSON string for additional data
+  createdAt DateTime @default(now())
+}
